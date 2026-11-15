@@ -1,16 +1,4 @@
 
-import pytest
-from fastapi.testclient import TestClient
-
-from app.main import create_app
-
-
-@pytest.fixture
-def client():
-    test_app = create_app()
-
-    with TestClient(test_app) as test_client:
-        yield test_client
 
 
 def test_create_and_read_document(client):

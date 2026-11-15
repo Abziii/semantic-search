@@ -2,3 +2,5 @@ fastapi
 uvicorn[standard]
 pytest
 httpx
+SQLAlchemy>=2.0,<2.1
+redis>=5,<7
