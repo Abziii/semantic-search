@@ -19,7 +19,11 @@ class Document(BaseModel):
     description: str = Field(min_length=1)
     text: str = Field(min_length=1)
 
-
+class DocumentUpdate(BaseModel):
+    title: str | None = Field(default=None, min_length=1)
+    description: str | None = Field(default=None, min_length=1)
+    text: str | None = Field(default=None, min_length=1)
+    
 def normalize_text(text: str) -> str:
     """Normalize text for duplicate detection."""
     return " ".join(text.casefold().split())

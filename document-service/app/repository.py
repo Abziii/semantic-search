@@ -22,3 +22,8 @@ class DocumentRepository:
         self.session.commit()
         self.session.refresh(document)
         return document
+    def update(self, document: DocumentDB) -> DocumentDB:
+        self.session.add(document)
+        self.session.commit()
+        self.session.refresh(document)
+        return document
