@@ -38,3 +38,7 @@ def client(tmp_path):
 
     with TestClient(test_app) as test_client:
         yield test_client
+@pytest.fixture
+def shared_database(tmp_path):
+    database_file = tmp_path / "shared.db"
+    return f"sqlite:///{database_file.as_posix()}"

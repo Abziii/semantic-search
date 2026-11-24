@@ -46,7 +46,7 @@ def create_app(
         )
 
     cache = DocumentCache(redis_client, ttl=cache_ttl)
-
+    
     @asynccontextmanager
     async def lifespan(app: FastAPI):
         Base.metadata.create_all(bind=engine)
@@ -159,6 +159,71 @@ def create_app(
                 raise
 
             return document
+
+    @app.patch(
+        "/documents/{document_id}",
+        response_model=Document,
+    )
+    def update_document(document_id: str, payload: DocumentUpdate):
+
+        updates = payload.model_dump(exclude_unset=True)
+
+        if not updates:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="At least one field must be provided"
+            )
+
+        if any(value is None for value in updates.values()):
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="Fields cannot be null"
+            )
+
+        with session_factory() as session:
+            repository = DocumentRepository(session)
+
+            document = repository.get_by_id(document_id)
+
+            if document is None:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail=f"Document with ID '{document_id}' not found"
+                )
+
+            # Check duplicate content if text is being changed
+            if "text" in updates:
+                normalized_new_text = normalize_text(updates["text"])
+
+                for existing in repository.get_all():
+                    if (
+                        existing.id != document_id
+                        and normalize_text(existing.text) == normalized_new_text
+                    ):
+                        raise HTTPException(
+                            status_code=status.HTTP_409_CONFLICT,
+                            detail="A document with identical text already exists"
+                        )
+
+            # Apply changes
+            for field, value in updates.items():
+                setattr(document, field, value)
+
+            try:
+                repository.update(document)
+            except Exception:
+                session.rollback()
+                raise
+
+            result = Document.model_validate(
+                document,
+                from_attributes=True,
+            )
+
+        # Invalidate cache only after successful database commit
+        cache.invalidate(document_id)
+
+        return result
 
     return app
 
