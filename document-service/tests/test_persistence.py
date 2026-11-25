@@ -129,7 +129,7 @@ def test_redis_failure_does_not_break_api(client):
         assert response.headers["X-Cache"] == "BYPASS"
         assert response.json()["id"] == "redis-failure-001"
 
-        # Aktualizacja również powinna działać.
+        # Aktualizacja 
         response = client.patch(
             "/documents/redis-failure-001",
             json={"title": "Updated without Redis"},
